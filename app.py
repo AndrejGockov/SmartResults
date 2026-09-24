@@ -99,13 +99,13 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 models = {
-    "Gemini": {
-        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
-        "api_key": GEMINI_API_KEY,
-    },
     "Groq": {
         "base_url": "https://api.groq.com/openai/v1",
         "api_key": GROQ_API_KEY,
+    },
+    "Gemini": {
+        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+        "api_key": GEMINI_API_KEY,
     },
 }
 
@@ -173,31 +173,34 @@ if analyze_btn:
                 st.stop()
 
             promptText = """
-            You are an exam result analyzer. Extract metrics from the uploaded exam results file.
+            You are an expert exam result analyzer. Extract precise metrics from the uploaded exam results file.
 
-            First, identify the grading scale used (e.g. raw score out of X, percentage, letter grade A-F, numeric grade 1-5 or 5-10, pass/fail).
+            CRITICAL COLUMN INSTRUCTIONS:
+            - For 'Students Tested': Count only the total number of unique individual student rows/records. Ignore table headers and summary footers.
+            - For 'Highest Points', 'Lowest Points', and 'Average Points': Look strictly at the **FINAL, CUMULATIVE, or TOTAL score column** (often labeled as "Total", "Final", "Sum", or "Points"). **NEVER** pull score metrics from sub-columns like "Theory", "Practical", "Lab", "Midterm", or "Internal" unless there is only a single column available.
+            - If both component columns (like Theory/Practical) and a Total column exist, calculations must derive exclusively from the Total column.
 
-            Then output exactly these tags, separated by sections with lines containing only '-----':
+            Assume the grading system is 5-10 (5 - F/failing grade, 10 - A/highest grade) or A-F if not explicitly described.
 
-            Subject: <subject name, if it cannot be determined in the file try looking in the file's name otherwise "Not specified">
-            Students Tested: <count>
+            Output exactly these tags, separated by sections with lines containing only '-----':
+
+            Subject: <subject name, or look in the file's name if missing, otherwise "Not specified">
+            Students Tested: <count of unique student rows>
             -----
-            Highest Grade: <highest grade in its original notation, e.g. "A" or "5">
-            Lowest Grade: <lowest grade in its original notation>
+            Highest Grade: <highest grade in its original notation, e.g. "A" or "5" or "Cannot be determined">
+            Lowest Grade: <lowest grade in its original notation or "Cannot be determined">
             Average Grade: <mean grade, or "Cannot be averaged" if non-numeric>
             -----
-            Highest Score: <highest total score in the data>
-            Lowest Score: <lowest total score in the data>
-            Average Score: <mean total score>
+            Maximum Points: <highest possible raw points from the final column, or "Not specified">
+            Highest Points: <highest total points from the final total column>
+            Lowest Points: <lowest total points from the final total column>
+            Average Points: <mean total points from the final total column>
             -----
             Students Passed: <count, or "Cannot be determined" if no threshold is given>
             Students Failed: <count, or "Cannot be determined" if no threshold is given>
-            -----
-            Grading System: <the scale detected, e.g. "Score out of 50" or "Letter grade A-F">
-            Passing Threshold: <cutoff as stated in file, or "Not specified">
-            Maximum Achievable Score: <highest possible raw score, or "Not specified">
 
-            Omit score tags if the file has no raw scores. Omit grade tags if the file has no separate grades.
+            Omit score tags if the file has no raw scores. 
+            Omit grade tags if the file has no separate grades.
 
             Rules:
             - Never invent a maximum score, scale, or passing threshold not shown in the file.
@@ -210,21 +213,18 @@ if analyze_btn:
             messages = buildMessages(uploadedFile, promptText)
             response = askLlmWithFallback(selectedModel, messages)
 
-            st.success("Analysis Complete!")
-            st.markdown("### Extracted Summary")
+            st.markdown("### Exam Data")
 
             if response.strip() == "The file doesn't have adequate results.":
                 st.warning(response)
             else:
                 sections = response.strip().split("-----")
 
-                # Using semi-transparent backgrounds and adaptive theme text colors
                 card_styles = [
                     ("Overview", "#38bdf8", "rgba(56, 189, 248, 0.08)"),
                     ("Grades Summary", "#4ade80", "rgba(74, 222, 128, 0.08)"),
                     ("Scores Summary", "#c084fc", "rgba(192, 132, 252, 0.08)"),
                     ("Pass/Fail Metrics", "#f87171", "rgba(248, 113, 113, 0.08)"),
-                    ("Grading Configuration", "#fbbf24", "rgba(251, 191, 36, 0.08)")
                 ]
 
                 for idx, section in enumerate(sections):
