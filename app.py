@@ -173,14 +173,15 @@ if analyze_btn:
                 st.stop()
 
             promptText = """
-            You are an expert exam result analyzer. Extract precise metrics from the uploaded exam results file.
+            You are an expert exam result analyzer. Extract precise metrics from the uploaded file.
 
             CRITICAL COLUMN INSTRUCTIONS:
             - For 'Students Tested': Count only the total number of unique individual student rows/records. Ignore table headers and summary footers.
             - For 'Highest Points', 'Lowest Points', and 'Average Points': Look strictly at the **FINAL, CUMULATIVE, or TOTAL score column** (often labeled as "Total", "Final", "Sum", or "Points"). **NEVER** pull score metrics from sub-columns like "Theory", "Practical", "Lab", "Midterm", or "Internal" unless there is only a single column available.
             - If both component columns (like Theory/Practical) and a Total column exist, calculations must derive exclusively from the Total column.
 
-            Assume the grading system is 5-10 (5 - F/failing grade, 10 - A/highest grade) or A-F if not explicitly described.
+            Assume the grading system is 5-10 where 5 is an F or failing grade and 10 is an A or the highest grade.
+            Assume if the number for final points are different that that shows the threshold, for example if everything bellow 40 is red that means 40 is the threshold for passing the exam.
 
             Output exactly these tags, separated by sections with lines containing only '-----':
 
