@@ -6,7 +6,10 @@ import os
 import streamlit as st
 
 st.set_page_config(
-    page_title="SmartResults", page_icon="📚", layout="centered"
+    page_title="SmartResults | Exam Analyzer",
+    page_icon="📚",
+    layout="centered",
+    initial_sidebar_state="auto"
 )
 
 def extractTextFromPdf(fileBytes: bytes) -> str:
